@@ -10,7 +10,7 @@ from collections import namedtuple
 from itertools import count
 from games.chess.state import State
 from games.chess.helper import convert_san, board_index
-
+from timeit import default_timer as timer
 # <<-- /Creer-Merge: imports -->>
 
 class AI(BaseAI):
@@ -75,7 +75,7 @@ class AI(BaseAI):
         for move in self.board.generate_moves(): 
             # piece index is the initial index of a piece on the board
             # move_index is the final index of a piece on the board
-            (piece_index, move_index) = self.iddl_minimax()  
+            (piece_index, move_index) = self.tlabiddl_minimax()  
             
             # Changing the piece and move indices accordingly if the current player is black
             if self.player.color == "black":
@@ -100,39 +100,49 @@ class AI(BaseAI):
     def update_board(self): 
         self.board = fenToState(self.game.fen)
 
-    #Implementation of Iterative deepening depth limited minimax
-    def iddl_minimax(self):
+    #Implementation of Time Limited Iterative deepening depth limited minimax
+    def tlabiddl_minimax(self):
         initial_board = self.board
         l_depth = 0
-        depth_limit = 2 # depth limit
-        
-        def min_play(board):
+        d_l = 2 
+
+        # Timelimiting stuff
+        time_limit = 10 # 10 seconds to find the best move
+        start_time = timer()
+
+        def min_play(board, alpha=(-inf), beta=(inf)):
             if board.depth >= l_depth:
                 return board.value()
             best_score = inf
             for move in board.generate_moves():
                 next_board = board.move(move)
                 if next_board.check_check(): continue
-                score = max_play(next_board)
+                score = max_play(next_board, alpha, beta)
                 if score < best_score:
                     best_move = move
                     best_score = score
+                if score <= alpha:
+                    return score
+                beta = min(beta, score)
             return best_score
 
-        def max_play(board):
+        def max_play(board, alpha=(-inf), beta=(inf)):
             if board.depth >= l_depth:
                 return board.value()
             best_score = -inf
             for move in board.generate_moves():
                 next_board = board.move(move)
                 if next_board.check_check(): continue
-                score = min_play(next_board)
+                score = min_play(next_board, alpha, beta)
                 if score > best_score:
                     best_move = move
                     best_score = score
+                if score >= beta:
+                    return score
+                alpha = max(alpha, score)
             return best_score
 
-        while l_depth <= depth_limit:
+        while l_depth <= d_l:
             frontier = [initial_board]
             visited = set(initial_board)
             while len(frontier) != 0:
@@ -147,6 +157,9 @@ class AI(BaseAI):
                         best_score = score
                     if not (next_board in visited) and not (next_board in frontier):
                         visited.add(next_board)
+                    if (timer() - start_time) >= time_limit:
+                        # If time limit is reached, give us the best move
+                        return best_move
             if len(frontier) == 0:
                 l_depth += 1
         return best_move
