@@ -87,6 +87,7 @@ class AI(BaseAI):
             final = convert_san(move_index).file + str(convert_san(move_index).rank)
             totalMove = initial + final
 
+        print(((self.player.time_remaining)*pow(10,-9)))
         print('Game State: \n')
         currentState = print_from_fen(self.game.fen, self.player.color)
         print(currentState)
@@ -104,9 +105,9 @@ class AI(BaseAI):
     def tlabiddl_minimax(self):
         initial_board = self.board
         l_depth = 0
-        d_l = 2 
+        d_l = 3 
 
-        # Timelimiting stuff
+        # Timelimiting 
         time_limit = 10 # 10 seconds to find the best move
         start_time = timer()
 
